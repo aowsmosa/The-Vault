@@ -1,0 +1,73 @@
+# -- Overrides for the Bitnami postgresql subchart. --
+# -- Everything below this key maps 1:1 onto the Bitnami chart's own values.yaml --
+postgresql:
+
+  # -- IMPORTANT: Bitnami discontinued free updates to the old docker.io/bitnami
+  #    image paths in late 2025. Versioned images now live in the unsupported
+  #    "legacy" registry. This override keeps the chart actually pullable.
+  #    (Long-term, a real production setup should evaluate Bitnami Secure
+  #    Images or a different Postgres distribution — legacy images get no
+  #    security patches. Fine for this learning exercise.)
+  image:
+    registry: docker.io
+    repository: bitnamilegacy/postgresql
+
+  auth:
+    # -- No password is set here. ExternalSecrets (Section 9) creates a
+    #    Secret named "database-credentials" ahead of time, and Bitnami
+    #    reads the admin/user passwords straight out of it. Nothing
+    #    sensitive ever lives in this chart or in Git.
+    existingSecret: database-credentials
+    secretKeys:
+      adminPasswordKey: postgres-password
+      userPasswordKey: password
+    username: appuser
+    database: appdb
+
+  # -- Built-in postgres-exporter sidecar, scraped by Prometheus --
+  metrics:
+    enabled: true
+    image:
+      registry: docker.io
+      repository: bitnamilegacy/postgres-exporter
+    serviceMonitor:
+      enabled: true
+      labels:
+        release: kube-prometheus-stack
+
+  primary:
+    persistence:
+      enabled: true
+      storageClass: gp3
+      size: 10Gi
+
+    resources:
+      requests:
+        cpu: 250m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+
+    # -- Only schedule onto db-nodes (tainted workload=database:NoSchedule) --
+    tolerations:
+      - key: workload
+        operator: Equal
+        value: database
+        effect: NoSchedule
+
+    # -- Only schedule onto nodes labeled role=db --
+    nodeAffinityPreset:
+      type: hard
+      key: role
+      values:
+        - db
+
+# -- Config for our own custom backup CronJob template (fleshed out in Section 7) --
+backup:
+  enabled: false
+  schedule: "0 3 * * *"
+  s3Bucket: ""
+  image:
+    repository: bitnamilegacy/postgresql
+    tag: "15"

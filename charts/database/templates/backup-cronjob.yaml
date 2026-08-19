@@ -1,0 +1,41 @@
+{{/*
+  This is a placeholder for the database backup CronJob.
+  It's intentionally disabled (backup.enabled: false) until Section 7,
+  where we'll fill in the actual pg_dump -> S3 logic and lifecycle policy.
+  It exists now so the directory structure matches what Exercise 2.3 expects.
+*/}}
+{{- if .Values.backup.enabled -}}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ .Release.Name }}-backup
+  labels:
+    app.kubernetes.io/name: database-backup
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  schedule: {{ .Values.backup.schedule | quote }}
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          tolerations:
+            - key: workload
+              operator: Equal
+              value: database
+              effect: NoSchedule
+          affinity:
+            nodeAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                  - matchExpressions:
+                      - key: role
+                        operator: In
+                        values:
+                          - db
+          containers:
+            - name: backup
+              image: "{{ .Values.backup.image.repository }}:{{ .Values.backup.image.tag }}"
+              # -- Full pg_dump -> S3 logic added in Section 7 --
+              command: ["/bin/sh", "-c", "echo 'backup logic added in Section 7'"]
+{{- end }}

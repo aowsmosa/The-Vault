@@ -1,0 +1,13 @@
+# Downloaded Helm subchart dependencies (re-fetched via helm dependency update)
+charts/*/charts/
+charts/*/Chart.lock
+
+# Local scratch files
+*.tar.gz
+*.log
+.DS_Store
+
+# Never commit real credentials if any get added later
+*.pem
+*.key
+kubeconfig
