@@ -1,9 +1,9 @@
+image:
+  repository: aowsmosa/frontend
+  tag: "1.0.0"
+
 serviceMonitor:
-  enabled: true
-  interval: 30s
-  path: /metrics
-  labels:
-    release: kube-prometheus-stack
+  enabled: false  # nginx doesn't expose /metrics; re-enable once we add an exporter
 
 autoscaling:
   enabled: true

@@ -7,12 +7,13 @@ orchestrated by Helmfile, with node isolation, monitoring, and autoscaling.
 ## Architecture
 
 - **EKS cluster** with two node groups:
-  - `app-nodes` (`t3.small`, labeled `role=app`) — runs frontend + backend
-  - `db-nodes` (`m7i-flex.large`, labeled `role=db`, tainted `workload=database:NoSchedule`) — runs the database only
-- **Frontend** and **Backend**: custom Helm charts (Deployment, Service, Ingress, HPA, ServiceMonitor)
+  - \`app-nodes\` (\`t3.small\` x3, labeled \`role=app\`) — runs frontend + backend
+  - \`db-nodes\` (\`m7i-flex.large\`, labeled \`role=db\`, tainted \`workload=database:NoSchedule\`) — runs the database only
+- **Frontend**: nginx serving a static page (\`apps/frontend\`) — custom Helm chart
+- **Backend**: minimal Express API with Prometheus metrics (\`apps/backend\`) — custom Helm chart
 - **Database**: a thin wrapper chart around the production-ready Bitnami PostgreSQL chart
-- **Helmfile** (`helmfile.yaml`) declares every release, dependency order, and namespace in one file
-- **Monitoring**: `kube-prometheus-stack` (Prometheus + Grafana + Alertmanager), with custom
+- **Helmfile** (\`helmfile.yaml\`) declares every release, dependency order, and namespace in one file
+- **Monitoring**: \`kube-prometheus-stack\` (Prometheus + Grafana + Alertmanager), with custom
   ServiceMonitors and Grafana dashboards provisioned via ConfigMap
 - **Autoscaling**: HPA (CPU/memory-based, with scale-up/down cooldowns) on frontend/backend,
   VPA (recommendation-only mode) on all three services
@@ -20,6 +21,9 @@ orchestrated by Helmfile, with node isolation, monitoring, and autoscaling.
 ## Repo layout
 
 \`\`\`
+apps/
+  frontend/    # nginx static page source + Dockerfile
+  backend/     # Express API source + Dockerfile
 charts/
   frontend/    # Custom Helm chart
   backend/     # Custom Helm chart
@@ -45,8 +49,8 @@ helmfile.yaml  # Single source of truth for all releases
 
 ## Notes
 
-- Frontend/backend currently use placeholder container images — this course is
-  infrastructure-focused, not application-focused.
-- Database credentials and Grafana admin credentials are wired via Kubernetes Secrets
-  (\`existingSecret\` pattern), never hardcoded in values — real secret creation is
-  handled by ExternalSecrets in Section 9.
+- Frontend and backend now run real container images (built from \`apps/\`), pushed to Docker Hub.
+- Database and backend still need \`database-credentials\` / \`backend-db-credentials\` Secrets,
+  which ExternalSecrets (Section 9) will create from AWS Secrets Manager — never hardcoded here.
+- Grafana admin credentials are wired via a Kubernetes Secret (\`existingSecret\` pattern), not
+  plaintext in values.
