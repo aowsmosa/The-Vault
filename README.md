@@ -1,4 +1,4 @@
-# EKS Production Stack — DevOps Exercises
+# The Vault — DevOps Exercises
 
 A production-style Kubernetes setup on AWS EKS, built incrementally as part of a DevOps course.
 Three-tier app (frontend + backend + database), fully managed through Helm charts and
